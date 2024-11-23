@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fan Control</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+  <div class="container">
+    <div class="left">
+      <h1>Fan Control</h1>
+      <img src="{{ url_for('video_feed') }}" width="640" height="480">
+    </div>
+    <div class="right">
+      <button id="controlButton" onclick="toggleControl()">Take Control</button>
+      <select id="presetSelect" style="display: none;">
+        <option value="manual">Manual</option>
+        <option value="left-right">Left-to-Right</option>
+        <option value="up-down">Up-Down</option>
+        <option value="circle">Circle</option>
+        <option value="zig-zag">Zig-Zag</option>
+      </select>
+      <br>
+      <button onclick="location.href='{{ url_for('toggle_face_tracking') }}'">Toggle Face Tracking</button>
+    </div>
+  </div>
+  <script>
+    function toggleControl() {
+      const controlButton = document.getElementById('controlButton');
+      const presetSelect = document.getElementById('presetSelect');
+      if (controlButton.innerText === 'Take Control') {
+        controlButton.innerText = 'Relinquish Control';
+        presetSelect.style.display = 'block';
+        // Add code to switch to manual control
+      } else {
+        controlButton.innerText = 'Take Control';
+        presetSelect.style.display = 'none';
+        // Add code to switch to automatic control
+      }
+    }
+  </script>
+</body>
+</html>
