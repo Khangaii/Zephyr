@@ -121,6 +121,18 @@ class Camera:
         """
         self.face_tracking = not self.face_tracking
 
+    def enable_face_tracking(self):
+        """
+        Enable face tracking.
+        """
+        self.face_tracking = True
+    
+    def disable_face_tracking(self):
+        """
+        Disable face tracking.
+        """
+        self.face_tracking = False
+
     def __del__(self):
         """
         Ensure resources are released on deletion.

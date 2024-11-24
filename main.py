@@ -45,8 +45,11 @@ def main():
                     centerX = (startX + endX) // 2
                     centerY = (startY + endY) // 2
                     motors.rotate_to(centerX, centerY)
-            elif current_mode == "joystick":
+            elif current_mode == "manual":
                 joystick_control()  # Placeholder for joystick control logic
+            elif current_mode == "standby":
+                motors.stop()  # Stop the motors
+            # Add other preset modes here
 
             time.sleep(0.1)  # Adjust the sleep time as needed
 

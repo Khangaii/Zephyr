@@ -1,19 +1,49 @@
 body {
     font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
+    background-color: #fefefe;
     margin: 0;
     padding: 0;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
+    overflow: auto; /* Allow scrolling if needed */
+}
+
+.admin {
+    width: 100%;
+    text-align: right;
+    padding: 10px 20px;
+    background-color: #f4f4f4;
+    border-bottom: 1px solid #ccc;
+}
+
+.admin-link {
+    color: grey;
+    text-decoration: underline;
+    margin: 0 10px;
 }
 
 .container {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     width: 80%;
     margin: 20px;
+    padding: 20px;
+    flex: 1; /* Allow the container to grow and shrink */
+}
+
+.header {
+    text-align: center;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.content {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    flex: 1; /* Allow the content to grow and shrink */
 }
 
 .left, .right {
@@ -30,6 +60,9 @@ img {
     border: 2px solid #333;
     border-radius: 10px;
     margin-bottom: 20px;
+    width: 100%;
+    height: auto;
+    max-height: calc(100vh - 200px); /* Adjust the max height to fit within the viewport */
 }
 
 button {
@@ -51,10 +84,183 @@ button:hover {
     background-color: #45a049;
 }
 
+button:disabled {
+    background-color: #cccccc;
+    color: #666666;
+    cursor: not-allowed;
+}
+
 select {
     padding: 10px;
     font-size: 16px;
     margin-top: 10px;
     border-radius: 5px;
     border: 1px solid #ccc;
+}
+
+.access-code {
+    margin-top: 20px;
+    background-color: #ffeb3b;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.access-code h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.access-code span {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgb(0,0,0);
+    background-color: rgba(0,0,0,0.4);
+    padding-top: 60px;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 500px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* Option Styles */
+.options {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+}
+
+.option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+}
+
+.preset-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.option input[type="radio"] {
+    display: none;
+}
+
+.option i {
+    font-size: 24px;
+    padding: 10px;
+    border: 2px solid #333;
+    border-radius: 50%;
+    margin-bottom: 5px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.option span {
+    font-size: 14px;
+    color: #333;
+}
+
+.option input[type="radio"]:checked + i {
+    background-color: #4CAF50;
+    color: white;
+    border-color: #4CAF50;
+}
+
+.option input[type="radio"]:not(:checked) + i {
+    background-color: #cccccc;
+    color: #666666;
+    border-color: #cccccc;
+}
+
+.option input[type="radio"]:disabled + i {
+    background-color: #b0b0b0;
+    color: #666666;
+    border-color: #b0b0b0;
+}
+
+.option input[type="radio"]:disabled:not(:checked) + i {
+    background-color: #e0e0e0;
+    color: #999999;
+    border-color: #e0e0e0;
+}
+
+/* Media Queries */
+@media (max-width: 1200px) {
+    .content {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .left, .right {
+        width: 100%;
+        margin: 10px 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .content {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .left, .right {
+        width: 100%;
+        margin: 10px 0;
+    }
+
+    img {
+        width: 100%;
+        height: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .content {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .left, .right {
+        width: 100%;
+        margin: 10px 0;
+    }
+
+    img {
+        width: 100%;
+        height: auto;
+    }
 }
