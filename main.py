@@ -34,6 +34,8 @@ def main():
     web_thread.start()
     print("Web app started successfully.")
 
+    last_face_detected_time = time.time()
+
     try:
         # Main loop
         while True:
@@ -44,11 +46,16 @@ def main():
                     (startX, startY, endX, endY) = faces[0]
                     centerX = (startX + endX) // 2
                     centerY = (startY + endY) // 2
-                    motors.rotate_to(centerX, centerY)
+                    motors.rotate_to_coordinates(centerX, centerY)
+                    motors.turn_fan_on()
+                    last_face_detected_time = time.time()
+                else:
+                    if time.time() - last_face_detected_time > 10:
+                        motors.turn_fan_off()
             elif current_mode == "manual":
                 joystick_control()  # Placeholder for joystick control logic
             elif current_mode == "standby":
-                motors.stop()  # Stop the motors
+                motors.stop()  # Stop the motors and turn off the fan
             # Add other preset modes here
 
             time.sleep(0.1)  # Adjust the sleep time as needed
@@ -57,7 +64,7 @@ def main():
         pass
     finally:
         camera.stop()
-        motors.stop()
+        motors.cleanup()
         print("Camera and motors stopped successfully.")
 
 if __name__ == "__main__":

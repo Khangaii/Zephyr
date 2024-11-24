@@ -29,8 +29,7 @@
             </div>
             <div class="right">
                 <div>
-                    <button id="controlButton" onclick="handleControlButtonClick()" {% if is_in_control %}disabled{% endif %}>Take
-                        Control</button>
+                    <button id="controlButton" onclick="handleControlButtonClick()" {% if is_in_control %}disabled{% endif %}>Take Control</button>
                 </div>
                 <div class="options">
                     <label class="option">
@@ -276,6 +275,46 @@
         socket.on('preset_update', (data) => {
             const preset = data.preset;
             document.getElementById('presetSelect').value = preset;
+        });
+
+        // Handle keyboard input for manual control
+        document.addEventListener('keydown', (event) => {
+            if (document.querySelector('input[name="mode"]:checked').value === 'manual') {
+                let command = '';
+                switch (event.key) {
+                    case 'w':
+                    case 'ArrowUp':
+                        command = 'up';
+                        break;
+                    case 's':
+                    case 'ArrowDown':
+                        command = 'down';
+                        break;
+                    case 'a':
+                    case 'ArrowLeft':
+                        command = 'left';
+                        break;
+                    case 'd':
+                    case 'ArrowRight':
+                        command = 'right';
+                        break;
+                }
+                if (command) {
+                    fetch('/manual_control', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `command=${command}`,
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status !== 'success') {
+                                alert(data.message);
+                            }
+                        });
+                }
+            }
         });
     </script>
 </body>

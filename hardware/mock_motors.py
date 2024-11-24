@@ -1,10 +1,9 @@
-import pigpio
 import time
 
-class FanMotor:
+class MockFanMotor:
     def __init__(self, base_pin, tilt_pin, fan_pin, camera_resolution=(640, 480)):
         """
-        Initialize the FanMotor class.
+        Initialize the MockFanMotor class.
         :param base_pin: GPIO pin connected to the base motor (MG996R).
         :param tilt_pin: GPIO pin connected to the tilt motor (MG90S).
         :param fan_pin: GPIO pin connected to the fan.
@@ -14,16 +13,6 @@ class FanMotor:
         self.tilt_pin = tilt_pin
         self.fan_pin = fan_pin
         self.camera_resolution = camera_resolution
-
-        # Initialize pigpio
-        self.pi = pigpio.pi()
-        if not self.pi.connected:
-            raise RuntimeError("pigpio daemon is not running")
-
-        # Set GPIO modes
-        self.pi.set_mode(self.base_pin, pigpio.OUTPUT)
-        self.pi.set_mode(self.tilt_pin, pigpio.OUTPUT)
-        self.pi.set_mode(self.fan_pin, pigpio.OUTPUT)
 
         # Initialize current angles
         self.current_base_angle = 90
@@ -35,22 +24,12 @@ class FanMotor:
         :param base_angle: Angle for the base motor (0 to 180 degrees).
         :param tilt_angle: Angle for the tilt motor (0 to 180 degrees).
         """
-        base_pulse_width = self.angle_to_pulse_width(base_angle)
-        tilt_pulse_width = self.angle_to_pulse_width(tilt_angle)
-
-        self.pi.set_servo_pulsewidth(self.base_pin, base_pulse_width)
-        self.pi.set_servo_pulsewidth(self.tilt_pin, tilt_pulse_width)
-
         print(f"Rotating fan to base angle {base_angle} and tilt angle {tilt_angle}")
-        time.sleep(0.5)  # Allow time for the servos to reach the position
+        time.sleep(0.5)  # Simulate time for the servos to reach the position
 
         # Update current angles
         self.current_base_angle = base_angle
         self.current_tilt_angle = tilt_angle
-
-        # Turn off PWM signals to prevent jitter
-        self.pi.set_servo_pulsewidth(self.base_pin, 0)
-        self.pi.set_servo_pulsewidth(self.tilt_pin, 0)
 
     def rotate_to_coordinates(self, x, y):
         """
@@ -85,43 +64,31 @@ class FanMotor:
         """
         Turn the fan on.
         """
-        self.pi.write(self.fan_pin, 1)
         print("Fan turned on")
 
     def turn_fan_off(self):
         """
         Turn the fan off.
         """
-        self.pi.write(self.fan_pin, 0)
         print("Fan turned off")
 
     def stop(self):
         """
         Stop the fan (turn off PWM signals).
         """
-        self.pi.set_servo_pulsewidth(self.base_pin, 0)
-        self.pi.set_servo_pulsewidth(self.tilt_pin, 0)
         self.turn_fan_off()
         print("Stopping the fan")
 
-    def angle_to_pulse_width(self, angle):
-        """
-        Convert an angle in degrees to a pulse width for the servo.
-        :param angle: Angle in degrees (0 to 180).
-        :return: Corresponding pulse width (500 to 2500 microseconds).
-        """
-        return 500 + (angle / 180) * 2000
-
     def cleanup(self):
         """
-        Cleanup pigpio resources.
+        Cleanup resources.
         """
-        self.pi.stop()
+        print("Cleaning up resources")
 
 # Initialize the motor
 def init(base_pin=17, tilt_pin=18, fan_pin=27, camera_resolution=(640, 480)):
     global motor
-    motor = FanMotor(base_pin, tilt_pin, fan_pin, camera_resolution)
+    motor = MockFanMotor(base_pin, tilt_pin, fan_pin, camera_resolution)
 
 # Rotate the fan to the specified angles
 def rotate_to(base_angle, tilt_angle):
@@ -143,6 +110,6 @@ def turn_fan_off():
 def stop():
     motor.stop()
 
-# Cleanup pigpio resources
+# Cleanup resources
 def cleanup():
     motor.cleanup()

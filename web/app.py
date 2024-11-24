@@ -166,6 +166,20 @@ def relinquish_control():
     else:
         return jsonify({'status': 'error', 'message': 'You do not have control'})
 
+@app.route('/manual_control', methods=['POST'])
+@control_required
+def manual_control():
+    command = request.form.get('command')
+    if command == 'up':
+        motors.rotate_to(motors.motor.current_base_angle, motors.motor.current_tilt_angle - 5)
+    elif command == 'down':
+        motors.rotate_to(motors.motor.current_base_angle, motors.motor.current_tilt_angle + 5)
+    elif command == 'left':
+        motors.rotate_to(motors.motor.current_base_angle - 5, motors.motor.current_tilt_angle)
+    elif command == 'right':
+        motors.rotate_to(motors.motor.current_base_angle + 5, motors.motor.current_tilt_angle)
+    return jsonify({'status': 'success'})
+
 def start_app(camera_instance):
     global camera
     camera = camera_instance
