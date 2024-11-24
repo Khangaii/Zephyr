@@ -61,7 +61,7 @@ def confirm_login():
         socketio.emit('control_update', {'current_admin': current_admin}, broadcast=True)
         return redirect(url_for('index'))
     else:
-        return redirect(url_for('login'))
+        return redirect(url_for('index'))
 
 @app.route('/logout')
 @login_required
