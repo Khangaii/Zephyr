@@ -1,6 +1,5 @@
 import threading
 import cv2
-import numpy as np
 from picamera2 import Picamera2, Preview
 from tracking.face_tracking import FaceTracker
 import time
@@ -23,7 +22,7 @@ class Camera:
         self.lock = threading.Lock()
         self.frame = None
         self.faces = []  # Store detected faces
-        self.face_tracker = FaceTracker("tracking/dnn/res10_300x300_ssd_iter_140000.caffemodel", "tracking/dnn/deploy.prototxt.txt")
+        self.face_tracker = FaceTracker("tracking/dnn/face_detection_yunet_2022mar.onnx")
 
         self._initialize_camera()
 
@@ -81,7 +80,11 @@ class Camera:
                     faces = self.face_tracker.detect_faces(frame)
                     with self.lock:
                         self.faces = faces  # Update detected faces
-                    for (startX, startY, endX, endY) in faces:
+                    for face in faces:
+                        bbox = face[:4].astype(int)
+                        startX, startY, width, height = bbox
+                        endX = startX + width
+                        endY = startY + height
                         cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
 
                 with self.lock:

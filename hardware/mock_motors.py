@@ -25,7 +25,7 @@ class MockFanMotor:
         :param tilt_angle: Angle for the tilt motor (0 to 180 degrees).
         """
         print(f"Rotating fan to base angle {base_angle} and tilt angle {tilt_angle}")
-        time.sleep(0.5)  # Simulate time for the servos to reach the position
+        # time.sleep(0.5)  # Simulate time for the servos to reach the position
 
         # Update current angles
         self.current_base_angle = base_angle

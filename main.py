@@ -1,6 +1,6 @@
 import threading
 import time
-import hardware.motors as motors
+import hardware.mock_motors as motors
 from tracking.camera import Camera
 from web.app import start_app
 
@@ -41,9 +41,11 @@ def main():
         while True:
             if current_mode == "automatic":
                 faces = camera.get_faces()
-                if faces:
+                if len(faces) > 0:
                     # Assuming the first detected face is the target
-                    (startX, startY, endX, endY) = faces[0]
+                    (startX, startY, width, height) = faces[0]
+                    endX = startX + width
+                    endY = startY + height
                     centerX = (startX + endX) // 2
                     centerY = (startY + endY) // 2
                     motors.rotate_to_coordinates(centerX, centerY)
