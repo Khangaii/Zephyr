@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 class FaceTracker:
-    def __init__(self, model_path, threshold=0.8):
+    def __init__(self, model_path, threshold=0.95):
         self.net = cv2.FaceDetectorYN.create(model_path, "", (320, 320), threshold, 0.3, 5000)
         self.threshold = threshold
 
