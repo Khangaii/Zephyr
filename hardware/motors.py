@@ -119,7 +119,7 @@ class FanMotor:
         self.pi.stop()
 
 # Initialize the motor
-def init(base_pin=17, tilt_pin=18, fan_pin=27, camera_resolution=(640, 480)):
+def init(base_pin=27, tilt_pin=17, fan_pin=22, camera_resolution=(640, 480)):
     global motor
     motor = FanMotor(base_pin, tilt_pin, fan_pin, camera_resolution)
 
@@ -146,3 +146,51 @@ def stop():
 # Cleanup pigpio resources
 def cleanup():
     motor.cleanup()
+
+# Test the motor functionality
+def test_motor():
+    try:
+        init()
+        print("Testing motor...")
+
+        # Rotate to initial position
+        rotate_to(90, 90)
+        input("Press Enter to continue...")
+
+        # Rotate to different angles
+        rotate_to(45, 45)
+        input("Press Enter to continue...")
+        rotate_to(135, 135)
+        input("Press Enter to continue...")
+
+        # Rotate to coordinates
+        rotate_to_coordinates(320, 240)
+        input("Press Enter to continue...")
+        rotate_to_coordinates(640, 480)
+        input("Press Enter to continue...")
+
+        # Turn the fan on and off
+        turn_fan_on()
+        input("Press Enter to turn the fan off...")
+        turn_fan_off()
+        input("Press Enter to finish the test...")
+
+        print("Motor test completed successfully.")
+    except Exception as e:
+        print(f"Error during motor test: {e}")
+    finally:
+        cleanup()
+
+def init_position():
+    try:
+        init()
+        rotate_to(90, 90)
+    except Exception as e:
+        print(f"Error during motor test: {e}")
+    finally:
+        cleanup()
+
+
+if __name__ == "__main__":
+    # test_motor()
+    init_position()

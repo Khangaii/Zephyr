@@ -1,6 +1,6 @@
 import threading
 import time
-import hardware.mock_motors as motors
+import hardware.motors as motors
 from tracking.camera import Camera
 from web.app import start_app
 
@@ -40,20 +40,22 @@ def main():
         # Main loop
         while True:
             if current_mode == "automatic":
-                faces = camera.get_faces()
-                if len(faces) > 0:
-                    # Assuming the first detected face is the target
-                    (startX, startY, width, height) = faces[0]
-                    endX = startX + width
-                    endY = startY + height
-                    centerX = (startX + endX) // 2
-                    centerY = (startY + endY) // 2
-                    motors.rotate_to_coordinates(centerX, centerY)
-                    motors.turn_fan_on()
-                    last_face_detected_time = time.time()
-                else:
-                    if time.time() - last_face_detected_time > 10:
-                        motors.turn_fan_off()
+                if camera.is_new_frame_available():
+                    frame = camera.get_frame()
+                    faces = camera.get_faces()
+                    if len(faces) > 0:
+                        # Assuming the first detected face is the target
+                        (startX, startY, width, height) = faces[0]
+                        endX = startX + width
+                        endY = startY + height
+                        centerX = (startX + endX) // 2
+                        centerY = (startY + endY) // 2
+                        motors.rotate_to_coordinates(centerX, centerY)
+                        motors.turn_fan_on()
+                        last_face_detected_time = time.time()
+                    else:
+                        if time.time() - last_face_detected_time > 10:
+                            motors.turn_fan_off()
             elif current_mode == "manual":
                 joystick_control()  # Placeholder for joystick control logic
             elif current_mode == "standby":

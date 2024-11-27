@@ -22,6 +22,7 @@ class Camera:
         self.lock = threading.Lock()
         self.frame = None
         self.faces = []  # Store detected faces
+        self.new_frame_available = False  # Flag to indicate if a new frame is available
         self.face_tracker = FaceTracker("tracking/dnn/face_detection_yunet_2022mar.onnx")
 
         self._initialize_camera()
@@ -89,6 +90,7 @@ class Camera:
 
                 with self.lock:
                     self.frame = frame
+                    self.new_frame_available = True  # Set the flag to indicate a new frame is available
             except Exception as e:
                 print(f"Error capturing frame: {e}")
 
@@ -98,7 +100,16 @@ class Camera:
         :return: The latest captured frame (or None if not available).
         """
         with self.lock:
+            self.new_frame_available = False  # Reset the flag when the frame is accessed
             return self.frame
+
+    def is_new_frame_available(self):
+        """
+        Check if a new frame is available.
+        :return: True if a new frame is available, False otherwise.
+        """
+        with self.lock:
+            return self.new_frame_available
 
     def get_faces(self):
         """
