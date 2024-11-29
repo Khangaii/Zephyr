@@ -309,6 +309,7 @@
                         break;
                 }
                 if (command && command !== currentCommand) {
+                    console.log(command);
                     currentCommand = command;
                     clearInterval(commandInterval);
                     commandInterval = setInterval(() => {

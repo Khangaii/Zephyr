@@ -10,7 +10,7 @@ from utils.shared_state import shared_state
 
 app = Flask(__name__, template_folder='template')
 app.secret_key = 'tkdldjchlrh!!'
-socketio = SocketIO(app)
+socketio = SocketIO(app, async_mode='eventlet')
 
 camera = None  # Global variable to store the Camera instance
 current_admin = None  # Global variable to store the current admin
