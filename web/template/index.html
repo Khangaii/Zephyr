@@ -131,13 +131,19 @@
             {% if logged_in %}
             fetch('/take_control', {
                 method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `access_code=${accessCode}`,
             })
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
                         document.getElementById('controlButton').innerText = 'Relinquish Control';
-                        document.getElementById('controlButton').disabled = true;
+                        document.getElementById('controlButton').disabled = false;
                         enableOptions();
+                        closeTempAccessCodeModal();
+                        document.getElementById('tempAccessCodeInput').value = ''; // Clear the input field
                     } else {
                         alert(data.message);
                     }
@@ -278,6 +284,9 @@
         });
 
         // Handle keyboard input for manual control
+        let currentCommand = '';
+        let commandInterval;
+
         document.addEventListener('keydown', (event) => {
             if (document.querySelector('input[name="mode"]:checked').value === 'manual') {
                 let command = '';
@@ -299,20 +308,46 @@
                         command = 'right';
                         break;
                 }
-                if (command) {
-                    fetch('/manual_control', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: `command=${command}`,
-                    })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status !== 'success') {
-                                alert(data.message);
-                            }
-                        });
+                if (command && command !== currentCommand) {
+                    currentCommand = command;
+                    clearInterval(commandInterval);
+                    commandInterval = setInterval(() => {
+                        fetch('/manual_control', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: `command=${command}`,
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.status !== 'success') {
+                                    alert(data.message);
+                                }
+                            });
+                    }, 100); // Adjust the interval as needed
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (event) => {
+            if (document.querySelector('input[name="mode"]:checked').value === 'manual') {
+                let command = '';
+                switch (event.key) {
+                    case 'w':
+                    case 'ArrowUp':
+                    case 's':
+                    case 'ArrowDown':
+                    case 'a':
+                    case 'ArrowLeft':
+                    case 'd':
+                    case 'ArrowRight':
+                        command = '';
+                        break;
+                }
+                if (command === '') {
+                    currentCommand = '';
+                    clearInterval(commandInterval);
                 }
             }
         });

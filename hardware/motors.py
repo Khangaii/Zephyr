@@ -1,125 +1,135 @@
 import pigpio
 import time
+import threading
+from utils.presets import preset_left_to_right, preset_up_down, preset_circle, preset_zig_zag
 
 class FanMotor:
     def __init__(self, base_pin, tilt_pin, fan_pin, camera_resolution=(640, 480)):
-        """
-        Initialize the FanMotor class.
-        :param base_pin: GPIO pin connected to the base motor (MG996R).
-        :param tilt_pin: GPIO pin connected to the tilt motor (MG90S).
-        :param fan_pin: GPIO pin connected to the fan.
-        :param camera_resolution: Resolution of the camera feed (default is 640x480).
-        """
         self.base_pin = base_pin
         self.tilt_pin = tilt_pin
         self.fan_pin = fan_pin
         self.camera_resolution = camera_resolution
 
-        # Initialize pigpio
         self.pi = pigpio.pi()
         if not self.pi.connected:
             raise RuntimeError("pigpio daemon is not running")
 
-        # Set GPIO modes
         self.pi.set_mode(self.base_pin, pigpio.OUTPUT)
         self.pi.set_mode(self.tilt_pin, pigpio.OUTPUT)
         self.pi.set_mode(self.fan_pin, pigpio.OUTPUT)
 
-        # Initialize current angles
         self.current_base_angle = 90
         self.current_tilt_angle = 90
 
+        self.rotation_thread = None
+        self.rotation_lock = threading.Lock()
+        self.stop_rotation = False
+        self.preset_thread = None
+
+    def angle_to_pulse_width(self, angle):
+        pulse_width = 500 + (angle / 180) * 2000
+        return max(500, min(2500, pulse_width))
+
     def rotate_to(self, base_angle, tilt_angle):
-        """
-        Rotate the fan to the specified angles.
-        :param base_angle: Angle for the base motor (0 to 180 degrees).
-        :param tilt_angle: Angle for the tilt motor (0 to 180 degrees).
-        """
-        base_pulse_width = self.angle_to_pulse_width(base_angle)
-        tilt_pulse_width = self.angle_to_pulse_width(tilt_angle)
+        with self.rotation_lock:
+            self.stop_rotation = True
+            if self.rotation_thread is not None:
+                self.rotation_thread.join()
 
-        self.pi.set_servo_pulsewidth(self.base_pin, base_pulse_width)
-        self.pi.set_servo_pulsewidth(self.tilt_pin, tilt_pulse_width)
+            self.stop_rotation = False
+            self.rotation_thread = threading.Thread(target=self._smooth_rotate, args=(base_angle, tilt_angle))
+            self.rotation_thread.start()
 
-        print(f"Rotating fan to base angle {base_angle} and tilt angle {tilt_angle}")
-        time.sleep(0.5)  # Allow time for the servos to reach the position
+    def _smooth_rotate(self, target_base_angle, target_tilt_angle):
+        step_size = 0.2
+        delay = 0.001
 
-        # Update current angles
-        self.current_base_angle = base_angle
-        self.current_tilt_angle = tilt_angle
+        while not self.stop_rotation and (self.current_base_angle != target_base_angle or self.current_tilt_angle != target_tilt_angle):
+            if self.current_base_angle < target_base_angle:
+                self.current_base_angle = min(self.current_base_angle + step_size, target_base_angle)
+            elif self.current_base_angle > target_base_angle:
+                self.current_base_angle = max(self.current_base_angle - step_size, target_base_angle)
 
-        # Turn off PWM signals to prevent jitter
+            if self.current_tilt_angle < target_tilt_angle:
+                self.current_tilt_angle = min(self.current_tilt_angle + step_size, target_tilt_angle)
+            elif self.current_tilt_angle > target_tilt_angle:
+                self.current_tilt_angle = max(self.current_tilt_angle - step_size, target_tilt_angle)
+
+            base_pulse_width = self.angle_to_pulse_width(self.current_base_angle)
+            tilt_pulse_width = self.angle_to_pulse_width(self.current_tilt_angle)
+
+            self.pi.set_servo_pulsewidth(self.base_pin, base_pulse_width)
+            self.pi.set_servo_pulsewidth(self.tilt_pin, tilt_pulse_width)
+
+            time.sleep(delay)
+
         self.pi.set_servo_pulsewidth(self.base_pin, 0)
         self.pi.set_servo_pulsewidth(self.tilt_pin, 0)
 
     def rotate_to_coordinates(self, x, y):
-        """
-        Rotate the fan to the specified Cartesian coordinates.
-        :param x: X-coordinate from the camera feed.
-        :param y: Y-coordinate from the camera feed.
-        """
-        # Calculate the center of the camera feed
         center_x = self.camera_resolution[0] // 2
         center_y = self.camera_resolution[1] // 2
 
-        # Calculate the offset from the center
         offset_x = x - center_x
         offset_y = y - center_y
 
-        # Map the offset to changes in angles (assuming 180 degrees range for both servos)
-        delta_base_angle = (offset_x / center_x) * 90
-        delta_tilt_angle = -(offset_y / center_y) * 90
+        threshold = 48
 
-        # Calculate the new angles
+        if abs(offset_x) < threshold and abs(offset_y) < threshold:
+            # print("Face is close enough to the center. No movement needed.")
+            return
+
+        k_base = 0.25
+        k_tilt = 0.25
+
+        delta_base_angle = -(offset_x / center_x) * 30 * k_base
+        delta_tilt_angle = -(offset_y / center_y) * 30 * k_tilt
+
         new_base_angle = self.current_base_angle + delta_base_angle
         new_tilt_angle = self.current_tilt_angle + delta_tilt_angle
 
-        # Ensure the angles are within the valid range
         new_base_angle = max(0, min(180, new_base_angle))
         new_tilt_angle = max(0, min(180, new_tilt_angle))
 
-        # Rotate to the new angles
         self.rotate_to(new_base_angle, new_tilt_angle)
 
     def turn_fan_on(self):
-        """
-        Turn the fan on.
-        """
         self.pi.write(self.fan_pin, 1)
-        print("Fan turned on")
+        # print("Fan turned on")
 
     def turn_fan_off(self):
-        """
-        Turn the fan off.
-        """
         self.pi.write(self.fan_pin, 0)
-        print("Fan turned off")
+        # print("Fan turned off")
 
     def stop(self):
-        """
-        Stop the fan (turn off PWM signals).
-        """
         self.pi.set_servo_pulsewidth(self.base_pin, 0)
         self.pi.set_servo_pulsewidth(self.tilt_pin, 0)
-        self.turn_fan_off()
-        print("Stopping the fan")
-
-    def angle_to_pulse_width(self, angle):
-        """
-        Convert an angle in degrees to a pulse width for the servo.
-        :param angle: Angle in degrees (0 to 180).
-        :return: Corresponding pulse width (500 to 2500 microseconds).
-        """
-        return 500 + (angle / 180) * 2000
+        self.stop_rotation = True
+        # print("Stopping the rotation")
 
     def cleanup(self):
-        """
-        Cleanup pigpio resources.
-        """
+        self.stop()
+        self.turn_fan_off()
         self.pi.stop()
 
+    def preset_left_to_right(self):
+        self.preset_thread = threading.Thread(target=preset_left_to_right, args=(self,))
+        self.preset_thread.start()
+
+    def preset_up_down(self):
+        self.preset_thread = threading.Thread(target=preset_up_down, args=(self,))
+        self.preset_thread.start()
+
+    def preset_circle(self):
+        self.preset_thread = threading.Thread(target=preset_circle, args=(self,))
+        self.preset_thread.start()
+
+    def preset_zig_zag(self):
+        self.preset_thread = threading.Thread(target=preset_zig_zag, args=(self,))
+        self.preset_thread.start()
+
 # Initialize the motor
-def init(base_pin=27, tilt_pin=17, fan_pin=22, camera_resolution=(640, 480)):
+def init(base_pin=27, tilt_pin=17, fan_pin=12, camera_resolution=(640, 480)):
     global motor
     motor = FanMotor(base_pin, tilt_pin, fan_pin, camera_resolution)
 
@@ -169,6 +179,9 @@ def test_motor():
         rotate_to_coordinates(640, 480)
         input("Press Enter to continue...")
 
+        rotate_to(90, 90)
+        input("Press Enter to continue...")
+
         # Turn the fan on and off
         turn_fan_on()
         input("Press Enter to turn the fan off...")
@@ -190,7 +203,6 @@ def init_position():
     finally:
         cleanup()
 
-
 if __name__ == "__main__":
-    # test_motor()
-    init_position()
+    test_motor()
+    # init_position()

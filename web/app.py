@@ -3,7 +3,10 @@ from flask_socketio import SocketIO, emit
 import cv2
 import random
 import string
+import time
 from functools import wraps
+import hardware.motors as motors
+from utils.shared_state import shared_state
 
 app = Flask(__name__, template_folder='template')
 app.secret_key = 'tkdldjchlrh!!'
@@ -12,11 +15,14 @@ socketio = SocketIO(app)
 camera = None  # Global variable to store the Camera instance
 current_admin = None  # Global variable to store the current admin
 access_code = None  # Global variable to store the one-time access code
-current_mode = 'automatic'  # Global variable to store the current mode
 
 # Dummy credentials
-USERNAME = 'admin'
-PASSWORD = 'password'
+USERNAME = 'sior'
+PASSWORD = 'wpvlfh!!'
+
+def set_camera(camera_instance):
+    global camera
+    camera = camera_instance
 
 def login_required(f):
     @wraps(f)
@@ -29,8 +35,8 @@ def login_required(f):
 def control_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'logged_in' not in session and request.remote_addr != current_admin:
-            return redirect(url_for('login'))
+        if request.remote_addr != current_admin:
+            return jsonify({'status': 'error', 'message': 'You do not have control'})
         return f(*args, **kwargs)
     return decorated_function
 
@@ -117,30 +123,46 @@ def disable_access_code():
 @app.route('/set_mode', methods=['POST'])
 @control_required
 def set_mode():
-    global current_mode
     mode = request.form.get('mode')
     preset = request.form.get('preset')
     
     if mode:
-        current_mode = mode
-    if preset and current_mode == 'presets':
-        current_mode = preset
+        shared_state["current_mode"] = mode
+    if preset and shared_state["current_mode"] == 'presets':
+        shared_state["current_mode"] = preset
+        
+    camera.disable_face_tracking()
+    motors.motor.stop_rotation = True
+    if motors.motor.preset_thread is not None:
+        motors.motor.preset_thread.join()
+    if motors.motor.rotation_thread is not None:
+        motors.motor.rotation_thread.join()
+    motors.motor.stop_rotation = False
 
-    if current_mode == 'automatic':
+    if shared_state["current_mode"] == 'automatic':
         camera.enable_face_tracking()
-    elif current_mode == 'manual':
+    elif shared_state["current_mode"] == 'manual':
         camera.disable_face_tracking()
     else:
-        camera.disable_face_tracking()
-        # Add other preset modes here
+        motors.motor.turn_fan_on()
+        motors.motor.stop_rotation = False
+        if shared_state["current_mode"] == 'standby':
+            pass
+        elif shared_state["current_mode"] == 'left-right':
+            motors.motor.preset_left_to_right()
+        elif shared_state["current_mode"] == 'up-down':
+            motors.motor.preset_up_down()
+        elif shared_state["current_mode"] == 'circle':
+            motors.motor.preset_circle()
+        elif shared_state["current_mode"] == 'zig-zag':
+            motors.motor.preset_zig_zag()
 
     socketio.emit('mode_update', {'mode': mode, 'preset': preset}, broadcast=True)
     return jsonify({'status': 'success'})
 
 @app.route('/get_mode')
 def get_mode():
-    global current_mode
-    return jsonify({'mode': current_mode})
+    return jsonify({'mode': shared_state["current_mode"]})
 
 @app.route('/take_control', methods=['POST'])
 def take_control():
@@ -169,15 +191,26 @@ def relinquish_control():
 @app.route('/manual_control', methods=['POST'])
 @control_required
 def manual_control():
+    step_angle = 10
     command = request.form.get('command')
+
+    # Stop any ongoing rotation
+    motors.motor.stop_rotation = True
+    if motors.motor.rotation_thread is not None:
+        motors.motor.rotation_thread.join()
+
+    # Execute manual control commands
     if command == 'up':
-        motors.rotate_to(motors.motor.current_base_angle, motors.motor.current_tilt_angle - 5)
+        motors.rotate_to(motors.motor.current_base_angle, motors.motor.current_tilt_angle + step_angle)
     elif command == 'down':
-        motors.rotate_to(motors.motor.current_base_angle, motors.motor.current_tilt_angle + 5)
+        motors.rotate_to(motors.motor.current_base_angle, motors.motor.current_tilt_angle - step_angle)
     elif command == 'left':
-        motors.rotate_to(motors.motor.current_base_angle - 5, motors.motor.current_tilt_angle)
+        motors.rotate_to(motors.motor.current_base_angle + step_angle, motors.motor.current_tilt_angle)
     elif command == 'right':
-        motors.rotate_to(motors.motor.current_base_angle + 5, motors.motor.current_tilt_angle)
+        motors.rotate_to(motors.motor.current_base_angle - step_angle, motors.motor.current_tilt_angle)
+
+    time.sleep(0.1)
+    motors.motor.stop()
     return jsonify({'status': 'success'})
 
 def start_app(camera_instance):
@@ -186,4 +219,4 @@ def start_app(camera_instance):
     socketio.run(app, host='0.0.0.0', debug=True, use_reloader=False)
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', debug=True)
+    socketio.run(app, host='0.0.0.0', debug=True, use_reloader=False)

@@ -5,13 +5,19 @@ from tracking.face_tracking import FaceTracker
 import time
 
 class Camera:
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super(Camera, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self, resolution=(640, 480), framerate=30, face_tracking=False):
-        """
-        Initialize the Camera class.
-        :param resolution: Tuple for the resolution of the video feed (default is 640x480).
-        :param framerate: Frames per second (default is 30).
-        :param face_tracking: Boolean to enable face tracking (default is False).
-        """
+        if hasattr(self, '_initialized') and self._initialized:
+            return
+
         print("Initializing Camera class.")
         self.resolution = resolution
         self.framerate = framerate
@@ -26,11 +32,9 @@ class Camera:
         self.face_tracker = FaceTracker("tracking/dnn/face_detection_yunet_2022mar.onnx")
 
         self._initialize_camera()
+        self._initialized = True
 
     def _initialize_camera(self):
-        """
-        Attempt to initialize the camera with retries.
-        """
         if self.picam2 is not None:
             print("Camera is already initialized.")
             return
@@ -51,9 +55,6 @@ class Camera:
         print("Failed to initialize camera after multiple attempts.")
 
     def start(self):
-        """
-        Start the camera stream in a separate thread.
-        """
         if self.running:
             print("Camera is already running.")
             return
@@ -67,9 +68,6 @@ class Camera:
         self.thread.start()
 
     def _capture_frames(self):
-        """
-        Continuously capture frames from the camera.
-        """
         while self.running:
             try:
                 frame = self.picam2.capture_array()
@@ -95,34 +93,20 @@ class Camera:
                 print(f"Error capturing frame: {e}")
 
     def get_frame(self):
-        """
-        Retrieve the latest frame.
-        :return: The latest captured frame (or None if not available).
-        """
         with self.lock:
             self.new_frame_available = False  # Reset the flag when the frame is accessed
             return self.frame
 
     def is_new_frame_available(self):
-        """
-        Check if a new frame is available.
-        :return: True if a new frame is available, False otherwise.
-        """
         with self.lock:
             return self.new_frame_available
 
     def get_faces(self):
-        """
-        Retrieve the latest detected faces.
-        :return: The latest detected faces (or an empty list if not available).
-        """
         with self.lock:
+            self.new_frame_available = False  # Reset the flag when the frame is accessed
             return self.faces
 
     def stop(self):
-        """
-        Stop the camera stream and release resources.
-        """
         self.running = False
         if hasattr(self, 'thread'):
             self.thread.join()
@@ -130,27 +114,15 @@ class Camera:
             self.picam2.stop()
 
     def toggle_face_tracking(self):
-        """
-        Toggle the face tracking feature.
-        """
         self.face_tracking = not self.face_tracking
 
     def enable_face_tracking(self):
-        """
-        Enable face tracking.
-        """
         self.face_tracking = True
     
     def disable_face_tracking(self):
-        """
-        Disable face tracking.
-        """
         self.face_tracking = False
 
     def __del__(self):
-        """
-        Ensure resources are released on deletion.
-        """
         self.stop()
 
 if __name__ == "__main__":
