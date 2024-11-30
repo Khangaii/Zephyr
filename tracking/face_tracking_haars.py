@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-class HaarFaceTracker:
+class FaceTracker:
     def __init__(self, cascade_path="tracking/haarcascade/haarcascade_frontalface_default.xml"):
         self.face_cascade = cv2.CascadeClassifier(cascade_path)
         self.cap = None

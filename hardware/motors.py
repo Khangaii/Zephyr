@@ -42,19 +42,19 @@ class FanMotor:
             self.rotation_thread.start()
 
     def _smooth_rotate(self, target_base_angle, target_tilt_angle):
-        step_size = 0.1
-        delay = 0.003
+        step_size = {x: 0.5, y: 1}
+        delay = 0.005
 
         while not self.stop_rotation and (self.current_base_angle != target_base_angle or self.current_tilt_angle != target_tilt_angle):
             if self.current_base_angle < target_base_angle:
-                self.current_base_angle = min(self.current_base_angle + step_size, target_base_angle)
+                self.current_base_angle = min(self.current_base_angle + step_size.x, target_base_angle)
             elif self.current_base_angle > target_base_angle:
-                self.current_base_angle = max(self.current_base_angle - step_size, target_base_angle)
+                self.current_base_angle = max(self.current_base_angle - step_size.x, target_base_angle)
 
             if self.current_tilt_angle < target_tilt_angle:
-                self.current_tilt_angle = min(self.current_tilt_angle + step_size, target_tilt_angle)
+                self.current_tilt_angle = min(self.current_tilt_angle + step_size.y, target_tilt_angle)
             elif self.current_tilt_angle > target_tilt_angle:
-                self.current_tilt_angle = max(self.current_tilt_angle - step_size, target_tilt_angle)
+                self.current_tilt_angle = max(self.current_tilt_angle - step_size.y, target_tilt_angle)
 
             base_pulse_width = self.angle_to_pulse_width(self.current_base_angle)
             tilt_pulse_width = self.angle_to_pulse_width(self.current_tilt_angle)
@@ -147,13 +147,13 @@ class FanMotor:
         delay = 0.05
         while not self.stop_rotation:
             if direction == 'up':
-                self.current_tilt_angle = self.current_tilt_angle + step_size
+                self.current_tilt_angle = min(self.current_tilt_angle + step_size, 180)
             elif direction == 'down':
-                self.current_tilt_angle = self.current_tilt_angle - step_size
+                self.current_tilt_angle = max(self.current_tilt_angle - step_size, 0)
             elif direction == 'left':
-                self.current_base_angle = self.current_base_angle + step_size 
+                self.current_base_angle = min(self.current_base_angle + step_size, 180)
             elif direction == 'right':
-                self.current_base_angle = self.current_base_angle - step_size
+                self.current_base_angle = max(self.current_base_angle - step_size, 0)
             print(f"Base angle: {self.current_base_angle}, Tilt angle: {self.current_tilt_angle}")
             self.pi.set_servo_pulsewidth(self.tilt_pin, self.angle_to_pulse_width(self.current_tilt_angle))
             self.pi.set_servo_pulsewidth(self.base_pin, self.angle_to_pulse_width(self.current_base_angle))

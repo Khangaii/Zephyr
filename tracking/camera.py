@@ -1,7 +1,7 @@
 import threading
 import cv2
 from picamera2 import Picamera2, Preview
-from tracking.face_tracking import FaceTracker
+from tracking.face_tracking_haars import FaceTracker
 import time
 
 class Camera:
@@ -29,7 +29,7 @@ class Camera:
         self.frame = None
         self.faces = []  # Store detected faces
         self.new_frame_available = False  # Flag to indicate if a new frame is available
-        self.face_tracker = FaceTracker("tracking/dnn/face_detection_yunet_2022mar.onnx")
+        self.face_tracker = FaceTracker()
 
         self._initialize_camera()
         self._initialized = True
