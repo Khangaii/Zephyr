@@ -35,18 +35,18 @@
                     <label class="option">
                         <input type="radio" name="mode" value="automatic" onclick="setMode('automatic')" {% if not is_in_control %}disabled{% endif %}>
                         <i class="fas fa-robot"></i>
-                        <span>Automatic</span>
+                        <span>Automatic [J]</span>
                     </label>
                     <label class="option">
                         <input type="radio" name="mode" value="manual" onclick="setMode('manual')" {% if not is_in_control %}disabled{% endif %}>
                         <i class="fas fa-hand-paper"></i>
-                        <span>Manual</span>
+                        <span>Manual [K]</span>
                     </label>
                     <div class="preset-option">
                         <label class="option">
                             <input type="radio" name="mode" value="presets" onclick="setMode('presets')" {% if not is_in_control %}disabled{% endif %}>
                             <i class="fas fa-cogs"></i>
-                            <span>Presets</span>
+                            <span>Presets [L]</span>
                         </label>
                         <select id="presetSelect" onchange="setPreset(this.value)" style="display: none;" {% if not is_in_control %}disabled{% endif %}>
                             <option value="standby">Standby</option>
@@ -307,9 +307,17 @@
                     case 'ArrowRight':
                         command = 'right';
                         break;
+                    case 'j':
+                        document.getElementById('automatic').click();
+                        break;
+                    case 'k':
+                        document.getElementById('manual').click();
+                        break;
+                    case 'l':
+                        document.getElementById('presets').click();
+                        break;
                 }
                 if (command && command !== currentCommand) {
-                    console.log(command);
                     currentCommand = command;
                     clearInterval(commandInterval);
                     commandInterval = setInterval(() => {
