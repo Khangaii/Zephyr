@@ -1,7 +1,7 @@
 import threading
 import cv2
 from picamera2 import Picamera2, Preview
-from tracking.face_tracking_haars import FaceTracker
+from tracking.face_tracking import FaceTracker
 import time
 
 class Camera:
