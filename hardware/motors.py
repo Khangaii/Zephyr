@@ -31,6 +31,7 @@ class FanMotor:
         return max(500, min(2500, pulse_width))
 
     def rotate_to(self, base_angle, tilt_angle):
+        print(f"Rotating to base angle: {base_angle}, tilt angle: {tilt_angle}")
         with self.rotation_lock:
             self.stop_rotation = True
             if self.rotation_thread is not None:
@@ -41,8 +42,8 @@ class FanMotor:
             self.rotation_thread.start()
 
     def _smooth_rotate(self, target_base_angle, target_tilt_angle):
-        step_size = 0.2
-        delay = 0.001
+        step_size = 0.1
+        delay = 0.003
 
         while not self.stop_rotation and (self.current_base_angle != target_base_angle or self.current_tilt_angle != target_tilt_angle):
             if self.current_base_angle < target_base_angle:
@@ -127,6 +128,36 @@ class FanMotor:
     def preset_zig_zag(self):
         self.preset_thread = threading.Thread(target=preset_zig_zag, args=(self,))
         self.preset_thread.start()
+
+    def start_continuous_rotation(self, direction):
+        self.stop_rotation = False
+        self.rotation_thread = threading.Thread(target=self._continuous_rotate, args=(direction,))
+        self.rotation_thread.start()
+
+    def stop_continuous_rotation(self):
+        self.stop_rotation = True
+        if self.rotation_thread is not None:
+            self.rotation_thread.join()
+        self.stop_rotation = False
+        self.pi.set_servo_pulsewidth(self.base_pin, 0)
+        self.pi.set_servo_pulsewidth(self.tilt_pin, 0)
+
+    def _continuous_rotate(self, direction):
+        step_size = 5
+        delay = 0.05
+        while not self.stop_rotation:
+            if direction == 'up':
+                self.current_tilt_angle = self.current_tilt_angle + step_size
+            elif direction == 'down':
+                self.current_tilt_angle = self.current_tilt_angle - step_size
+            elif direction == 'left':
+                self.current_base_angle = self.current_base_angle + step_size 
+            elif direction == 'right':
+                self.current_base_angle = self.current_base_angle - step_size
+            print(f"Base angle: {self.current_base_angle}, Tilt angle: {self.current_tilt_angle}")
+            self.pi.set_servo_pulsewidth(self.tilt_pin, self.angle_to_pulse_width(self.current_tilt_angle))
+            self.pi.set_servo_pulsewidth(self.base_pin, self.angle_to_pulse_width(self.current_base_angle))
+            time.sleep(delay)
 
 # Initialize the motor
 def init(base_pin=27, tilt_pin=17, fan_pin=12, camera_resolution=(640, 480)):

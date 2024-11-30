@@ -37,27 +37,28 @@ def main():
         while True:
             current_mode = shared_state["current_mode"]
             if current_mode == "automatic":
-                if camera.is_new_frame_available():
-                    faces = camera.get_faces()
-                    if len(faces) > 0:
-                        # Find the largest face
-                        largest_face = max(faces, key=lambda face: face[2] * face[3])
-                        (startX, startY, width, height) = largest_face
-                        endX = startX + width
-                        endY = startY + height
-                        centerX = (startX + endX) // 2
-                        centerY = (startY + endY) // 2
-                        motors.rotate_to_coordinates(centerX, centerY)
-                        motors.turn_fan_on()
-                        last_face_detected_time = time.time()
-                    else:
-                        if time.time() - last_face_detected_time > 10:
-                            motors.turn_fan_off()
-                            motors.rotate_to(90, 135)
+                # if camera.is_new_frame_available():
+                faces = camera.get_faces()
+                if len(faces) > 0:
+                    # Find the largest face
+                    largest_face = max(faces, key=lambda face: face[2] * face[3])
+                    (startX, startY, width, height) = largest_face
+                    endX = startX + width
+                    endY = startY + height
+                    centerX = (startX + endX) // 2
+                    centerY = (startY + endY) // 2
+                    motors.rotate_to_coordinates(centerX, centerY)
+                    motors.turn_fan_on()
+                    last_face_detected_time = time.time()
+                else:
+                    if time.time() - last_face_detected_time > 10:
+                        motors.turn_fan_off()
+                        motors.rotate_to(90, 135)
+                # else:
+                #     print("No new frame available.")
             elif current_mode == "manual":
                 motors.turn_fan_on()  # Turn on the fan for manual control
                 joystick_control()  # Placeholder for joystick control logic
-                motors.stop()
             elif current_mode == "standby":
                 motors.stop()  # Stop the motors and keep the fan on
             elif current_mode == "left-right":

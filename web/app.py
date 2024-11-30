@@ -10,7 +10,7 @@ from utils.shared_state import shared_state
 
 app = Flask(__name__, template_folder='template')
 app.secret_key = 'tkdldjchlrh!!'
-socketio = SocketIO(app, async_mode='eventlet')
+socketio = SocketIO(app)
 
 camera = None  # Global variable to store the Camera instance
 current_admin = None  # Global variable to store the current admin
@@ -191,26 +191,23 @@ def relinquish_control():
 @app.route('/manual_control', methods=['POST'])
 @control_required
 def manual_control():
-    step_angle = 10
     command = request.form.get('command')
-
     # Stop any ongoing rotation
     motors.motor.stop_rotation = True
     if motors.motor.rotation_thread is not None:
         motors.motor.rotation_thread.join()
-
+    motors.motor.stop_rotation = False
     # Execute manual control commands
     if command == 'up':
-        motors.rotate_to(motors.motor.current_base_angle, motors.motor.current_tilt_angle + step_angle)
+        motors.motor.start_continuous_rotation('up')
     elif command == 'down':
-        motors.rotate_to(motors.motor.current_base_angle, motors.motor.current_tilt_angle - step_angle)
+        motors.motor.start_continuous_rotation('down')
     elif command == 'left':
-        motors.rotate_to(motors.motor.current_base_angle + step_angle, motors.motor.current_tilt_angle)
+        motors.motor.start_continuous_rotation('left')
     elif command == 'right':
-        motors.rotate_to(motors.motor.current_base_angle - step_angle, motors.motor.current_tilt_angle)
-
-    time.sleep(0.1)
-    motors.motor.stop()
+        motors.motor.start_continuous_rotation('right')
+    elif command == 'stop':
+        motors.motor.stop_continuous_rotation()
     return jsonify({'status': 'success'})
 
 def start_app(camera_instance):
