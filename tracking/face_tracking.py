@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 class FaceTracker:
-    def __init__(self, model_path='tracking/dnn/face_detection_yunet_2023mar.onnx', threshold=0.95):
+    def __init__(self, model_path='tracking/dnn/face_detection_yunet_2022mar.onnx', threshold=0.95):
         self.net = cv2.FaceDetectorYN.create(model_path, "", (320, 320), threshold, 0.3, 5000)
         self.threshold = threshold
 
@@ -34,6 +34,6 @@ class FaceTracker:
         cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    model_path = "tracking/dnn/face_detection_yunet_2023mar.onnx"
+    model_path = "tracking/dnn/face_detection_yunet_2022mar.onnx"
     tracker = FaceTracker(model_path)
     tracker.start_tracking()
