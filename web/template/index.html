@@ -285,8 +285,6 @@
 
         // Handle keyboard input for manual control
         let currentCommand = '';
-        let commandInterval;
-
         document.addEventListener('keydown', (event) => {
             if (document.querySelector('input[name="mode"]:checked').value === 'manual') {
                 let command = '';
@@ -319,22 +317,19 @@
                 }
                 if (command && command !== currentCommand) {
                     currentCommand = command;
-                    clearInterval(commandInterval);
-                    commandInterval = setInterval(() => {
-                        fetch('/manual_control', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded',
-                            },
-                            body: `command=${command}`,
-                        })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.status !== 'success') {
-                                    alert(data.message);
-                                }
-                            });
-                    }, 100); // Adjust the interval as needed
+                    fetch('/manual_control', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `command=${command}`,
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status !== 'success') {
+                                alert(data.message);
+                            }
+                        });
                 }
             }
         });
@@ -351,12 +346,24 @@
                     case 'ArrowLeft':
                     case 'd':
                     case 'ArrowRight':
-                        command = '';
+                        command = 'stop';
                         break;
                 }
-                if (command === '') {
+                if (command === 'stop') {
                     currentCommand = '';
-                    clearInterval(commandInterval);
+                    fetch('/manual_control', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `command=${command}`,
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status !== 'success') {
+                                alert(data.message);
+                            }
+                        });
                 }
             }
         });
