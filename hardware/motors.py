@@ -42,20 +42,19 @@ class FanMotor:
             self.rotation_thread.start()
 
     def _smooth_rotate(self, target_base_angle, target_tilt_angle):
-        step_size_x = 0.5
-        step_size_y = 1
+        step_size = 0.5
         delay = 0.005
 
         while not self.stop_rotation and (self.current_base_angle != target_base_angle or self.current_tilt_angle != target_tilt_angle):
             if self.current_base_angle < target_base_angle:
-                self.current_base_angle = min(self.current_base_angle + step_size_x, target_base_angle)
+                self.current_base_angle = min(self.current_base_angle + step_size, target_base_angle)
             elif self.current_base_angle > target_base_angle:
-                self.current_base_angle = max(self.current_base_angle - step_size_x, target_base_angle)
+                self.current_base_angle = max(self.current_base_angle - step_size, target_base_angle)
 
             if self.current_tilt_angle < target_tilt_angle:
-                self.current_tilt_angle = min(self.current_tilt_angle + step_size_y, target_tilt_angle)
+                self.current_tilt_angle = min(self.current_tilt_angle + step_size, target_tilt_angle)
             elif self.current_tilt_angle > target_tilt_angle:
-                self.current_tilt_angle = max(self.current_tilt_angle - step_size_y, target_tilt_angle)
+                self.current_tilt_angle = max(self.current_tilt_angle - step_size, target_tilt_angle)
 
             base_pulse_width = self.angle_to_pulse_width(self.current_base_angle)
             tilt_pulse_width = self.angle_to_pulse_width(self.current_tilt_angle)
@@ -84,8 +83,8 @@ class FanMotor:
         k_base = 0.25
         k_tilt = 0.25
 
-        delta_base_angle = -(offset_x / center_x) * 30 * k_base
-        delta_tilt_angle = -(offset_y / center_y) * 30 * k_tilt
+        delta_base_angle = -(offset_x / center_x) * 25 * k_base
+        delta_tilt_angle = -(offset_y / center_y) * 25 * k_tilt
 
         new_base_angle = self.current_base_angle + delta_base_angle
         new_tilt_angle = self.current_tilt_angle + delta_tilt_angle
