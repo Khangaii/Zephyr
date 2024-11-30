@@ -42,19 +42,20 @@ class FanMotor:
             self.rotation_thread.start()
 
     def _smooth_rotate(self, target_base_angle, target_tilt_angle):
-        step_size = {x: 0.5, y: 1}
+        step_size_x = 0.5
+        step_size_y = 1
         delay = 0.005
 
         while not self.stop_rotation and (self.current_base_angle != target_base_angle or self.current_tilt_angle != target_tilt_angle):
             if self.current_base_angle < target_base_angle:
-                self.current_base_angle = min(self.current_base_angle + step_size.x, target_base_angle)
+                self.current_base_angle = min(self.current_base_angle + step_size_x, target_base_angle)
             elif self.current_base_angle > target_base_angle:
-                self.current_base_angle = max(self.current_base_angle - step_size.x, target_base_angle)
+                self.current_base_angle = max(self.current_base_angle - step_size_x, target_base_angle)
 
             if self.current_tilt_angle < target_tilt_angle:
-                self.current_tilt_angle = min(self.current_tilt_angle + step_size.y, target_tilt_angle)
+                self.current_tilt_angle = min(self.current_tilt_angle + step_size_y, target_tilt_angle)
             elif self.current_tilt_angle > target_tilt_angle:
-                self.current_tilt_angle = max(self.current_tilt_angle - step_size.y, target_tilt_angle)
+                self.current_tilt_angle = max(self.current_tilt_angle - step_size_y, target_tilt_angle)
 
             base_pulse_width = self.angle_to_pulse_width(self.current_base_angle)
             tilt_pulse_width = self.angle_to_pulse_width(self.current_tilt_angle)
